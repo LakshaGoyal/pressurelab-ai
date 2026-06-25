@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -61,14 +61,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 default_origins = [
+    "https://pressurelab-ai.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://pressurelab-ai.vercel.app",
 ]
+env_origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 allowed_origins = [
-    o.strip()
-    for o in os.environ.get("ALLOWED_ORIGINS", ",".join(default_origins)).split(",")
-    if o.strip()
+    origin
+    for origin in dict.fromkeys(default_origins + env_origins)
 ]
 
 app.add_middleware(
@@ -78,6 +78,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_origin_header(request: Request, call_next):
+    origin = request.headers.get("origin")
+    if origin:
+        print(f"CORS request origin={origin} method={request.method} path={request.url.path}", flush=True)
+    return await call_next(request)
 
 app.include_router(teams.router, prefix="/api")
 app.include_router(matches.router, prefix="/api")
