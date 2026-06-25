@@ -62,6 +62,7 @@ app = FastAPI(lifespan=lifespan)
 
 default_origins = [
     "https://pressurelab-ai.vercel.app",
+    "https://pressurelab-ai-e76j.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -73,8 +74,8 @@ allowed_origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
